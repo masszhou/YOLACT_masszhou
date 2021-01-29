@@ -3,7 +3,7 @@ import torch.nn.functional as F
 from yolact.layers.box_utils import decode, jaccard, index2d
 from yolact.utils import timer
 
-from data import cfg, mask_type
+from yolact.data import cfg, mask_type
 
 import numpy as np
 

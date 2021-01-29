@@ -8,9 +8,9 @@ from math import sqrt
 from typing import List
 from collections import defaultdict
 
-from data.config import cfg, mask_type
+from yolact.data.config import cfg, mask_type
 from yolact.layers.detection import Detect
-from layers.interpolate import InterpolateModule
+from yolact.layers.interpolate import InterpolateModule
 from yolact.layers.backbone import construct_backbone
 
 import torch.backends.cudnn as cudnn

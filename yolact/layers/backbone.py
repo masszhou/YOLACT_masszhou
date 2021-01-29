@@ -4,13 +4,13 @@ import pickle
 
 from collections import OrderedDict
 
-try:
-    from dcn_v2 import DCN
-except ImportError:
-    def DCN(*args, **kwdargs):
-        raise Exception(
-            'DCN could not be imported. If you want to use YOLACT++ models, '
-            'compile DCN. Check the README for instructions.')
+# try:
+#     from dcn_v2 import DCN
+# except ImportError:
+#     def DCN(*args, **kwdargs):
+#         raise Exception(
+#             'DCN could not be imported. If you want to use YOLACT++ models, '
+#             'compile DCN. Check the README for instructions.')
 
 
 class Bottleneck(nn.Module):
@@ -23,11 +23,12 @@ class Bottleneck(nn.Module):
         self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=1, bias=False, dilation=dilation)
         self.bn1 = norm_layer(planes)
         if use_dcn:
-            self.conv2 = DCN(planes, planes, kernel_size=3, stride=stride,
-                             padding=dilation, dilation=dilation, deformable_groups=1)
-            self.conv2.bias.data.zero_()
-            self.conv2.conv_offset_mask.weight.data.zero_()
-            self.conv2.conv_offset_mask.bias.data.zero_()
+            # self.conv2 = DCN(planes, planes, kernel_size=3, stride=stride,
+            #                  padding=dilation, dilation=dilation, deformable_groups=1)
+            # self.conv2.bias.data.zero_()
+            # self.conv2.conv_offset_mask.weight.data.zero_()
+            # self.conv2.conv_offset_mask.bias.data.zero_()
+            pass
         else:
             self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride,
                                    padding=dilation, bias=False, dilation=dilation)
@@ -114,11 +115,13 @@ class ResNetBackbone(nn.Module):
             )
 
         layers = []
-        use_dcn = (dcn_layers >= blocks)
+        # use_dcn = (dcn_layers >= blocks)
+        use_dcn = False
         layers.append(block(self.inplanes, planes, stride, downsample, self.norm_layer, self.dilation, use_dcn=use_dcn))
         self.inplanes = planes * block.expansion
         for i in range(1, blocks):
-            use_dcn = ((i + dcn_layers) >= blocks) and (i % dcn_interval == 0)
+            # use_dcn = ((i + dcn_layers) >= blocks) and (i % dcn_interval == 0)
+            use_dcn = False
             layers.append(block(self.inplanes, planes, norm_layer=self.norm_layer, use_dcn=use_dcn))
         layer = nn.Sequential(*layers)
 
