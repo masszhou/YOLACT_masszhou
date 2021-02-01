@@ -1,9 +1,12 @@
 import torch
 import cv2
+from collections import defaultdict
 
 from yolact.data import cfg, COLORS
 from yolact.utils import timer
-from yolact.layers.output_utils import postprocess, undo_image_transformation
+from yolact.utils.output_utils import postprocess, undo_image_transformation
+
+color_cache = defaultdict(lambda: {})
 
 
 def prep_display(dets_out, img, h, w, args, undo_transform=True, class_color=False, mask_alpha=0.45, fps_str=''):
@@ -41,6 +44,7 @@ def prep_display(dets_out, img, h, w, args, undo_transform=True, class_color=Fal
 
     # Quick and dirty lambda for selecting the color for a particular index
     # Also keeps track of a per-gpu color cache for maximum speed
+
     def get_color(j, on_gpu=None):
         global color_cache
         color_idx = (classes[j] * 5 if class_color else j * 5) % len(COLORS)

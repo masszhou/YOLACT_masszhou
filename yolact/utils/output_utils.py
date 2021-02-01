@@ -6,7 +6,7 @@ import cv2
 
 from yolact.data import cfg, mask_type, MEANS, STD, activation_func
 from yolact.utils import timer
-from .box_utils import crop, sanitize_coordinates
+from yolact.utils.box_utils import crop, sanitize_coordinates
 
 
 def postprocess(det_output, w, h, batch_idx=0, interpolation_mode='bilinear',
@@ -57,8 +57,8 @@ def postprocess(det_output, w, h, batch_idx=0, interpolation_mode='bilinear',
         proto_data = dets['proto']
 
         # Test flag, do not upvote
-        if cfg.mask_proto_debug:
-            np.save('scripts/proto.npy', proto_data.cpu().numpy())
+        # if cfg.mask_proto_debug:
+        #     np.save('scripts/proto.npy', proto_data.cpu().numpy())
 
         if visualize_lincomb:
             display_lincomb(proto_data, masks)
