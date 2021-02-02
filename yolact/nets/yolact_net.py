@@ -1,4 +1,4 @@
-import torch, torchvision
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.models.resnet import Bottleneck
@@ -28,18 +28,6 @@ if not use_jit:
 
 ScriptModuleWrapper = torch.jit.ScriptModule if use_jit else nn.Module
 script_method_wrapper = torch.jit.script_method if use_jit else lambda fn, _rcn=None: fn
-
-
-class Concat(nn.Module):
-    def __init__(self, nets, extra_params):
-        super().__init__()
-
-        self.nets = nn.ModuleList(nets)
-        self.extra_params = extra_params
-
-    def forward(self, x):
-        # Concat each along the channel dimension
-        return torch.cat([net(x) for net in self.nets], dim=1, **self.extra_params)
 
 
 prior_cache = defaultdict(lambda: None)
@@ -411,7 +399,7 @@ class Yolact(nn.Module):
         # Compute mask_dim here and add it back to the config. Make sure Yolact's constructor is called early!
         if cfg.mask_type == mask_type.direct:
             cfg.mask_dim = cfg.mask_size ** 2
-        elif cfg.mask_type == mask_type.lincomb:
+        elif cfg.mask_type == mask_type.lincomb:  # Mask Assembly
             if cfg.mask_proto_use_grid:
                 self.grid = torch.Tensor(np.load(cfg.mask_proto_grid_file))
                 self.num_grids = self.grid.size(0)
@@ -434,16 +422,18 @@ class Yolact(nn.Module):
             if cfg.mask_proto_bias:
                 cfg.mask_dim += 1
 
-        self.selected_layers = cfg.backbone.selected_layers
+        self.selected_layers = cfg.backbone.selected_layers  # e.g. = list(range(2, 8)) for resnet101
         src_channels = self.backbone.channels
 
-        if cfg.use_maskiou:
+        if cfg.use_maskiou:  # False for YOLACT, True for YOLACT++
             self.maskiou_net = FastMaskIoUNet()
 
         if cfg.fpn is not None:
             # Some hacky rewiring to accomodate the FPN
             self.fpn = FPN([src_channels[i] for i in self.selected_layers])
             self.selected_layers = list(range(len(self.selected_layers) + cfg.fpn.num_downsample))
+            # cfg.fpn.num_downsample
+            # The number of extra layers to be produced by downsampling starting at P5, e.g. = 2 indicates P6, P7
             src_channels = [cfg.fpn.num_features] * len(self.selected_layers)
 
         self.prediction_layers = nn.ModuleList()
@@ -578,13 +568,14 @@ class Yolact(nn.Module):
         if cfg.fpn is not None:
             with timer.env('fpn'):
                 # Use backbone.selected_layers because we overwrote self.selected_layers
-                outs = [outs[i] for i in cfg.backbone.selected_layers]
+                outs = [outs[i] for i in cfg.backbone.selected_layers]  # e.g. = list(range(2, 8)) for resnet101
                 outs = self.fpn(outs)
 
         proto_out = None
         if cfg.mask_type == mask_type.lincomb and cfg.eval_mask_branch:
             with timer.env('proto'):
                 proto_x = x if self.proto_src is None else outs[self.proto_src]
+                # e.g. proto_src = 0, take outs[0] to protonet
 
                 if self.num_grids > 0:
                     grids = self.grid.repeat(proto_x.size(0), 1, 1, 1)

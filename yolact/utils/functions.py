@@ -162,6 +162,18 @@ class SavePath:
         return max_name
 
 
+class Concat(torch.nn.Module):
+    def __init__(self, nets, extra_params):
+        super().__init__()
+
+        self.nets = torch.nn.ModuleList(nets)
+        self.extra_params = extra_params
+
+    def forward(self, x):
+        # Concat each along the channel dimension
+        return torch.cat([net(x) for net in self.nets], dim=1, **self.extra_params)
+
+
 def make_net(in_channels, conf, include_last_relu=True):
     """
     A helper function to take a config setting and turn it into a network.
